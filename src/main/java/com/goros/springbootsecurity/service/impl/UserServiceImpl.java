@@ -1,5 +1,7 @@
 package com.goros.springbootsecurity.service.impl;
 
+import com.goros.springbootsecurity.model.entity.User;
+import com.goros.springbootsecurity.model.response.UserResponse;
 import com.goros.springbootsecurity.repository.UserRepository;
 import com.goros.springbootsecurity.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.getUser(email);
+    }
+
+
+    public User getUserById(Long userId) {
+        return userRepository.getUserById(userId);
     }
 
     @Override

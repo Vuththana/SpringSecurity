@@ -19,8 +19,12 @@ public interface UserRepository {
     """)
     public User getUser(String email);
 
-    @Select(
-"""
+    @Select("""
+    SELECT * FROM app_users WHERE user_id = #{userID}
+    """)
+    public User getUserById(Long userId);
+
+    @Select("""
     SELECT role_name FROM app_user_role aur INNER JOIN app_roles ar ON aur.role_id = ar.role_id WHERE user_id = #{userId}
     """)
     public List<String> getAllRoles(Long userId);

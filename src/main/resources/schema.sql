@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS app_roles (
 );
 
 CREATE TABLE IF NOT EXISTS app_user_role (
-    user_id INTEGER,
-    role_id INTEGER,
+    user_id INTEGER NOT NULL,
+    role_id INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES app_users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (role_id) REFERENCES app_roles(role_id) ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY (user_id, role_id)
