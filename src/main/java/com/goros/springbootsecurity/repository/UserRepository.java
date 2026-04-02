@@ -1,31 +1,49 @@
 package com.goros.springbootsecurity.repository;
 
 import com.goros.springbootsecurity.model.entity.User;
+import com.goros.springbootsecurity.model.request.UserRequest;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
 @Mapper
 public interface UserRepository {
-    @Results(id = "userMapper", value = {
+    @Results(id = "appUserMapper", value = {
             @Result(property = "userId", column = "user_id"),
             @Result(property = "fullName", column = "fullname"),
-            @Result(property = "roles", column = "user_id", many = @Many(select = "getAllRoles"))
-})
-
-@Select("""
-    
-        SELECT * FROM app_users where email = #{email}
+            @Result(property = "roles", column = "user_id", many = @Many(select = "getAllRolesByUserId"))
+    })
+    @Select("""
+        SELECT * FROM app_users WHERE email = #{email}
     """)
-    public User getUser(String email);
+    User getUserByEmail(String email);
 
     @Select("""
-    SELECT * FROM app_users WHERE user_id = #{userID}
+        SELECT role_name FROM app_user_role aur
+        INNER JOIN app_roles ar
+        ON aur.role_id = ar.role_id
+        WHERE user_id = #{userId}
     """)
-    public User getUserById(Long userId);
+    List<String> getAllRolesByUserId(Long userId);
 
     @Select("""
-    SELECT role_name FROM app_user_role aur INNER JOIN app_roles ar ON aur.role_id = ar.role_id WHERE user_id = #{userId}
-    """)
-    public List<String> getAllRoles(Long userId);
+                INSERT INTO app_users
+                VALUES (default, #{request.username}, #{request.email}, #{request.password})
+                RETURNING *
+            """)
+    @ResultMap("appUserMapper")
+    User register(@Param("request") UserRequest request);
+
+    @Insert("""
+                INSERT INTO user_role
+                VALUES (#{userId}, #{roleId})
+            """)
+    void insertUserIdAndRoleId(Long roleId, Long userId);
+
+    @Select("""
+                SELECT * FROM app_users
+                WHERE user_id = #{userId}
+            """)
+    @ResultMap("appUserMapper")
+    User getUserById(Long userId);
 }
