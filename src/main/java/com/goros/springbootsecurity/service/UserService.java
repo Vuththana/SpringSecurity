@@ -1,12 +1,9 @@
 package com.goros.springbootsecurity.service;
 
-import com.goros.springbootsecurity.model.entity.User;
+import com.goros.springbootsecurity.model.request.UserRequest;
+import com.goros.springbootsecurity.model.response.UserResponse;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
-import java.util.List;
-
 public interface UserService extends UserDetailsService {
-
-    List<String> getAllRoles(Long userId);
-    User getUserById(Long userId);
+    UserResponse register(UserRequest request);
 }

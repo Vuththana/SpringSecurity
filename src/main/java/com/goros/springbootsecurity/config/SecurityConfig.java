@@ -1,41 +1,44 @@
 package com.goros.springbootsecurity.config;
 
-import com.goros.springbootsecurity.service.UserService;
+import com.goros.springbootsecurity.jwt.JwtAuthEntryPoint;
+import com.goros.springbootsecurity.jwt.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
+    private final JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthEntryPoint jwtAuthEntrypoint;
 
     @Bean
-    public AuthenticationProvider authenticationProvider () {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userService);
-        provider.setPasswordEncoder(passwordEncoder);
-        return provider;
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) {
-        httpSecurity
-                .csrf(AbstractHttpConfigurer::disable)
-                .authenticationProvider(authenticationProvider())
-                .formLogin(formLogin -> formLogin.defaultSuccessUrl("/default"))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/default").permitAll()
-                        .requestMatchers("/user").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/admin").hasRole("ADMIN")
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()).httpBasic(Customizer.withDefaults());
-        return httpSecurity.build();
+    SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        http
+                .cors(withDefaults()).csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers("/api/v1/auths/**", "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        .anyRequest().authenticated())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntrypoint))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
     }
 }

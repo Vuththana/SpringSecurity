@@ -1,4 +1,4 @@
-package com.goros.springbootsecurity.service;
+package com.goros.springbootsecurity.jwt;
 
 
 import com.goros.springbootsecurity.model.entity.User;
@@ -17,8 +17,9 @@ import java.util.function.Function;
 
 @Component
 public class JwtService {
+
     public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
-    public static final String SECRET = "81b407d56f09c135fd48103aadd5e7d5";
+    public static final String SECRET = "FVPr6Q/fVlHGZkElZubC0Zaxv657dPUfDQ4o9DADjSin7+uST1d2A5klMWrMK8fmSl3doyf2wn5zj56VC+qqCg==";
 
     private String createToken(Map<String, Object> claim, String subject) {
         return Jwts.builder()
@@ -31,17 +32,17 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
                 .signWith(getSignKey()).compact();
     }
+
     private SecretKey getSignKey() {
         byte[] keyBytes = Base64.getDecoder().decode(SECRET);
-
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         User user = (User) userDetails;
         claims.put(
-                "userId", user.getUserId()
+                "userId", user.getUserId() // pass userId as an extra claim
         );
         return createToken(claims, ((User) userDetails).getEmail());
     }
@@ -54,20 +55,25 @@ public class JwtService {
                 .getPayload();
     }
 
-    private <T> T extractClaim (String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaim(token);
         return claimsResolver.apply(claims);
     }
 
-    private String extractUsername(String token) {
+    public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    private Date extractExpirationDate(String token) {
+    public Date extractExpirationDate(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
     private Boolean isTokenExpired(String token) {
         return extractExpirationDate(token).before(new Date());
+    }
+
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        final String email = extractUsername(token);
+        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 }
